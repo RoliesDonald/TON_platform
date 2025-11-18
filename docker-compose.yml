@@ -1,0 +1,74 @@
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: ton-postgres
+    environment:
+      POSTGRES_DB: ton_platform
+      POSTGRES_USER: ton_user
+      POSTGRES_PASSWORD: ton_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - ton-network
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: ton-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ton-network
+
+  # Golang Backend (when ready)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ton-backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ton_platform
+      DB_USER: ton_user
+      DB_PASSWORD: ton_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ton-network
+    profiles:
+      - backend
+
+  # Next.js Frontend (when ready)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ton-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    depends_on:
+      - backend
+    networks:
+      - ton-network
+    profiles:
+      - frontend
+
+volumes:
+  postgres_data:
+
+networks:
+  ton-network:
+    driver: bridge

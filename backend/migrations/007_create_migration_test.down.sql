@@ -1,0 +1,3 @@
+-- Test validation cleanup - this file is intentionally empty
+-- The test only performs validations and doesn't create permanent objects
+-- No cleanup required
