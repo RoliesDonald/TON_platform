@@ -7,7 +7,7 @@ type User struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	Username  string    `json:"username" gorm:"uniqueIndex;not null"`
 	Email     string    `json:"email" gorm:"uniqueIndex;not null"`
-	Password  string    `json:"-" gorm:"not null"` // Hidden in JSON
+	Password  string    `json:"-" gorm:"column:password_hash;not null"` // Hidden in JSON
 	FirstName string    `json:"first_name" gorm:"not null"`
 	LastName  string    `json:"last_name" gorm:"not null"`
 	RoleID    uint      `json:"role_id" gorm:"not null"`
