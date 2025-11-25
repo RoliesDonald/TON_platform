@@ -1,321 +1,180 @@
-'use client';
+"use client"
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import apiClient from '@/lib/api';
-import {
-  User,
-  LoginRequest,
-  RegisterRequest,
-  ChangePasswordRequest,
-  AuthState,
-  AuthContextType,
-  AuthError
-} from '@/types/auth';
+import { createContext, useContext, useEffect, useState, ReactNode } from "react"
 
-interface AuthProviderProps {
-  children: ReactNode;
+// User role types based on the TON platform
+export type UserRole = "admin" | "manager" | "accountant" | "service_advisor" | "mechanic" | "driver"
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  avatar?: string
+  phone?: string
+  created_at?: string
+  last_login?: string
 }
 
-// Action types
-type AuthAction =
-  | { type: 'LOGIN_START' }
-  | { type: 'LOGIN_SUCCESS'; payload: User }
-  | { type: 'LOGIN_FAILURE'; payload: AuthError }
-  | { type: 'LOGOUT' }
-  | { type: 'REGISTER_START' }
-  | { type: 'REGISTER_SUCCESS'; payload: User }
-  | { type: 'REGISTER_FAILURE'; payload: AuthError }
-  | { type: 'REFRESH_SUCCESS'; payload: User }
-  | { type: 'SET_ERROR'; payload: AuthError | null }
-  | { type: 'CLEAR_ERROR' }
-  | { type: 'SET_LOADING'; payload: boolean };
+interface AuthContextType {
+  user: User | null
+  login: (email: string, password: string) => Promise<boolean>
+  logout: () => Promise<void>
+  isLoading: boolean
+  updateUserRole: (role: UserRole) => void
+}
 
-// Initial state
-const initialState: AuthState = {
-  user: null,
-  isLoading: false,
-  isAuthenticated: false,
-  error: null,
-};
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Reducer function
-const authReducer = (state: AuthState, action: AuthAction): AuthState => {
-  switch (action.type) {
-    case 'LOGIN_START':
-    case 'REGISTER_START':
-      return {
-        ...state,
-        isLoading: true,
-        error: null,
-      };
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-    case 'LOGIN_SUCCESS':
-    case 'REGISTER_SUCCESS':
-    case 'REFRESH_SUCCESS':
-      return {
-        ...state,
-        user: action.payload,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-      };
-
-    case 'LOGIN_FAILURE':
-    case 'REGISTER_FAILURE':
-      return {
-        ...state,
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: action.payload,
-      };
-
-    case 'LOGOUT':
-      return {
-        ...state,
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
-      };
-
-    case 'SET_ERROR':
-      return {
-        ...state,
-        error: action.payload,
-      };
-
-    case 'CLEAR_ERROR':
-      return {
-        ...state,
-        error: null,
-      };
-
-    case 'SET_LOADING':
-      return {
-        ...state,
-        isLoading: action.payload,
-      };
-
-    default:
-      return state;
-  }
-};
-
-// Create context
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// AuthProvider component
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [state, dispatch] = useReducer(authReducer, initialState);
-
-  // Check authentication status on mount
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      // Check if we're on the client side
-      if (typeof window === 'undefined') {
-        console.log('🚫 [AuthContext] Running on server, skipping auth check');
-        dispatch({ type: 'SET_LOADING', payload: false });
-        return;
+    // Check for existing session on mount
+    checkAuthSession()
+  }, [])
+
+  const checkAuthSession = async () => {
+    try {
+      setIsLoading(true)
+
+      // In a real app, check localStorage or make API call to validate session
+      const token = localStorage.getItem('auth_token')
+      const userData = localStorage.getItem('user_data')
+
+      if (token && userData) {
+        const parsedUser = JSON.parse(userData)
+        setUser(parsedUser)
+
+        // Validate token with backend
+        // const response = await fetch('/api/v1/auth/validate', {
+        //   headers: { Authorization: `Bearer ${token}` }
+        // })
+        // if (!response.ok) {
+        //   throw new Error('Invalid token')
+        // }
+      } else {
+        // No existing session - user needs to login
+        setUser(null)
       }
+    } catch (error) {
+      console.error('Auth session check failed:', error)
+      // Clear invalid session
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user_data')
+      setUser(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-      const token = localStorage.getItem('access_token');
-      console.log('🔍 [AuthContext] Checking auth status on mount:', {
-        hasToken: !!token,
-        tokenLength: token?.length,
-        timestamp: new Date().toISOString()
-      });
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      setIsLoading(true)
 
-      if (token) {
-        try {
-          dispatch({ type: 'SET_LOADING', payload: true });
-          console.log('📡 [AuthContext] Calling getProfile API...');
-          const response = await apiClient.getProfile();
+      // In a real app, make API call to authenticate
+      // const response = await fetch('/api/v1/auth/login', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ email, password })
+      // })
+      // const data = await response.json()
 
-          console.log('📥 [AuthContext] getProfile response:', {
-            success: response.success,
-            hasData: !!response.data,
-            errorMessage: response.error?.message,
-            responseData: response.data
-          });
+      // Mock login for development
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
-          if (response.success && response.data) {
-            console.log('✅ [AuthContext] Token validated, setting user:', response.data);
-            dispatch({ type: 'REFRESH_SUCCESS', payload: response.data });
-          } else {
-            console.log('❌ [AuthContext] Invalid token response, clearing auth');
-            // Invalid token, clear it
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            dispatch({ type: 'LOGOUT' });
-          }
-        } catch (error) {
-          console.log('💥 [AuthContext] Token validation failed, clearing auth:', {
-            errorMessage: error.message,
-            errorCode: error.code,
-            errorDetails: error.details,
-            fullError: error
-          });
-          // Token validation failed, clear storage
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          dispatch({ type: 'LOGOUT' });
+      if (email && password) {
+        // Determine user role based on email (for demo purposes)
+        let role: UserRole = "manager"
+        if (email.includes("admin")) role = "admin"
+        else if (email.includes("accountant")) role = "accountant"
+        else if (email.includes("mechanic")) role = "mechanic"
+        else if (email.includes("driver")) role = "driver"
+        else if (email.includes("service")) role = "service_advisor"
+
+        const userData: User = {
+          id: "1",
+          name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          email,
+          role,
+          avatar: email.substring(0, 2).toUpperCase(),
+          phone: "+1 (555) 000-0000",
+          created_at: new Date().toISOString(),
+          last_login: new Date().toISOString()
         }
-      }
-      dispatch({ type: 'SET_LOADING', payload: false });
-    };
 
-    checkAuthStatus();
-  }, []);
+        // Mock token
+        const token = "mock_jwt_token_" + Date.now()
 
-  // Login function
-  const login = async (credentials: LoginRequest): Promise<void> => {
-    try {
-      console.log('🔐 [AuthContext] Login attempt started with:', {
-        email: credentials.email,
-        timestamp: new Date().toISOString()
-      });
+        localStorage.setItem('auth_token', token)
+        localStorage.setItem('user_data', JSON.stringify(userData))
+        setUser(userData)
 
-      dispatch({ type: 'LOGIN_START' });
-
-      console.log('📡 [AuthContext] Calling apiClient.login...');
-      const response = await apiClient.login(credentials.email, credentials.password);
-
-      console.log('📥 [AuthContext] API response received:', {
-        success: response.success,
-        hasData: !!response.data,
-        errorMessage: response.error?.message,
-        errorCode: response.error?.code,
-        responseData: response.data
-      });
-
-      if (!response.success || !response.data) {
-        const errorMsg = response.error?.message || 'Login failed';
-        console.log('❌ [AuthContext] Login failed - invalid response:', errorMsg);
-        throw new Error(errorMsg);
+        return true
       }
 
-      console.log('✅ [AuthContext] Login successful - dispatching success');
-      dispatch({ type: 'LOGIN_SUCCESS', payload: response.data.user });
-    } catch (error: any) {
-      console.log('💥 [AuthContext] Login error caught:', {
-        message: error.message,
-        code: error.code,
-        field: error.field,
-        details: error.details,
-        fullError: error
-      });
-
-      const authError: AuthError = {
-        message: error.message || 'Login failed',
-        code: error.code || 'LOGIN_ERROR',
-        field: error.field,
-      };
-      dispatch({ type: 'LOGIN_FAILURE', payload: authError });
-      throw authError;
+      return false
+    } catch (error) {
+      console.error('Login failed:', error)
+      return false
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
 
-  // Register function
-  const register = async (userData: RegisterRequest): Promise<void> => {
-    try {
-      dispatch({ type: 'REGISTER_START' });
-
-      const response = await apiClient.register(userData);
-
-      if (!response.success || !response.data) {
-        throw new Error(response.error?.message || 'Registration failed');
-      }
-
-      dispatch({ type: 'REGISTER_SUCCESS', payload: response.data.user });
-    } catch (error: any) {
-      const authError: AuthError = {
-        message: error.message || 'Registration failed',
-        code: error.code || 'REGISTER_ERROR',
-        field: error.field,
-      };
-      dispatch({ type: 'REGISTER_FAILURE', payload: authError });
-      throw authError;
-    }
-  };
-
-  // Logout function
   const logout = async (): Promise<void> => {
     try {
-      await apiClient.logout();
+      setIsLoading(true)
+
+      // In a real app, make API call to logout
+      // await fetch('/api/v1/auth/logout', {
+      //   method: 'POST',
+      //   headers: { Authorization: `Bearer ${token}` }
+      // })
+
+      // Clear local storage
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user_data')
+      setUser(null)
     } catch (error) {
-      // Even if logout API fails, clear local state
-      console.error('Logout API error:', error);
+      console.error('Logout failed:', error)
+      // Even if logout API fails, clear local session
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user_data')
+      setUser(null)
     } finally {
-      dispatch({ type: 'LOGOUT' });
+      setIsLoading(false)
     }
-  };
+  }
 
-  // Refresh token function
-  const refreshToken = async (): Promise<void> => {
-    try {
-      const response = await apiClient.get('/api/v1/auth/refresh');
-
-      if (response.success && response.data) {
-        dispatch({ type: 'REFRESH_SUCCESS', payload: response.data.user });
-      }
-    } catch (error) {
-      dispatch({ type: 'LOGOUT' });
-      throw error;
+  const updateUserRole = (role: UserRole) => {
+    if (user) {
+      const updatedUser = { ...user, role }
+      setUser(updatedUser)
+      localStorage.setItem('user_data', JSON.stringify(updatedUser))
     }
-  };
+  }
 
-  // Change password function
-  const changePassword = async (data: ChangePasswordRequest): Promise<void> => {
-    try {
-      const response = await apiClient.changePassword(data.current_password, data.new_password);
-
-      if (!response.success) {
-        throw new Error(response.error?.message || 'Password change failed');
-      }
-    } catch (error: any) {
-      const authError: AuthError = {
-        message: error.message || 'Password change failed',
-        code: error.code || 'PASSWORD_CHANGE_ERROR',
-      };
-      dispatch({ type: 'SET_ERROR', payload: authError });
-      throw authError;
-    }
-  };
-
-  // Clear error function
-  const clearError = (): void => {
-    dispatch({ type: 'CLEAR_ERROR' });
-  };
-
-  // Context value
   const value: AuthContextType = {
-    user: state.user,
-    isLoading: state.isLoading,
-    isAuthenticated: state.isAuthenticated,
-    error: state.error,
+    user,
     login,
-    register,
     logout,
-    refreshToken,
-    changePassword,
-    clearError,
-  };
+    isLoading,
+    updateUserRole
+  }
 
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
-  );
-};
+  )
+}
 
-// Custom hook to use auth context
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
+export function useAuth() {
+  const context = useContext(AuthContext)
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider')
   }
-  return context;
-};
-
-export default AuthContext;
+  return context
+}

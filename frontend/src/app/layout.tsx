@@ -1,33 +1,37 @@
-import './globals.css';
-import { Inter } from 'next/font/google';
-import { AuthProviderWrapper } from '@/components/providers/AuthProviderWrapper';
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { Layout } from "@/components/Layout";
 
-const inter = Inter({ subsets: ['latin'] });
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
 
-// Temporarily disabled to fix React Server Components error
-// export const metadata = {
-//   title: 'TON Platform - Vehicle Rental, Workshop Service, and Spare Parts Shop',
-//   description: 'Integrated Business Management System for Vehicle Rental, Workshop Service, and Spare Parts Shop',
-//   keywords: ['vehicle rental', 'workshop service', 'spare parts', 'business management', 'TON Platform'],
-//   authors: [{ name: 'TON Platform Team' }],
-// };
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
-// export const viewport = {
-//   width: 'device-width',
-//   initialScale: 1,
-// };
+export const metadata: Metadata = {
+  title: "TON Platform - Fleet Management System",
+  description: "Complete vehicle fleet management and maintenance tracking system",
+};
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <AuthProviderWrapper>
-          {children}
-        </AuthProviderWrapper>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <AuthProvider>
+          <Layout>{children}</Layout>
+        </AuthProvider>
       </body>
     </html>
   );
