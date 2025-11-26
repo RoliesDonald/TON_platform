@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react"
 
 // User role types based on the TON platform
-export type UserRole = "admin" | "manager" | "accountant" | "service_advisor" | "mechanic" | "driver"
+export type UserRole = "admin" | "manager" | "accountant" | "service_advisor" | "mechanic" | "driver" | "vehicle_rental_company"
 
 export interface User {
   id: string
@@ -14,6 +14,10 @@ export interface User {
   phone?: string
   created_at?: string
   last_login?: string
+  // Vehicle rental company specific fields
+  companyId?: string  // Reference to vehicle rental company if user is a company
+  companyName?: string
+  companyLogo?: string
 }
 
 interface AuthContextType {
@@ -55,8 +59,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         //   throw new Error('Invalid token')
         // }
       } else {
-        // No existing session - user needs to login
-        setUser(null)
+        // No existing session - provide mock user for development
+        if (process.env.NODE_ENV === 'development') {
+          const mockUser: User = {
+            id: 'mock-user-1',
+            name: 'John Doe',
+            email: 'john@rentalcompany.com',
+            role: 'vehicle_rental_company',
+            companyId: 'mock-1',
+            companyName: 'Test Rental Company',
+            companyLogo: 'TR',
+            created_at: new Date().toISOString(),
+          }
+          setUser(mockUser)
+        } else {
+          setUser(null)
+        }
       }
     } catch (error) {
       console.error('Auth session check failed:', error)
@@ -87,11 +105,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (email && password) {
         // Determine user role based on email (for demo purposes)
         let role: UserRole = "manager"
+        let companyId: string | undefined = undefined
+        let companyName: string | undefined = undefined
+        let companyLogo: string | undefined = undefined
+
         if (email.includes("admin")) role = "admin"
         else if (email.includes("accountant")) role = "accountant"
         else if (email.includes("mechanic")) role = "mechanic"
         else if (email.includes("driver")) role = "driver"
         else if (email.includes("service")) role = "service_advisor"
+        else if (email.includes("rental") || email.includes("company")) {
+          role = "vehicle_rental_company"
+          // For demo purposes, use mock company data
+          companyId = "mock-1"
+          companyName = "Premium Fleet Rentals"
+          companyLogo = "PF"
+        }
 
         const userData: User = {
           id: "1",
@@ -101,7 +130,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           avatar: email.substring(0, 2).toUpperCase(),
           phone: "+1 (555) 000-0000",
           created_at: new Date().toISOString(),
-          last_login: new Date().toISOString()
+          last_login: new Date().toISOString(),
+          companyId,
+          companyName,
+          companyLogo
         }
 
         // Mock token
@@ -177,4 +209,58 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
+}
+
+// RBAC utility functions
+export const canManageVehicles = (user: User | null): boolean => {
+  if (!user) return false
+  return user.role === "admin" || user.role === "vehicle_rental_company" || user.role === "manager"
+}
+
+export const canRegisterVehicles = (user: User | null): boolean => {
+  if (!user) return false
+  return user.role === "admin" || user.role === "vehicle_rental_company"
+}
+
+export const canViewAllVehicles = (user: User | null): boolean => {
+  if (!user) return false
+  return user.role === "admin" || user.role === "manager"
+}
+
+export const canManageCompanyVehicles = (user: User | null, companyId: string): boolean => {
+  if (!user) return false
+  return user.role === "admin" ||
+         (user.role === "vehicle_rental_company" && user.companyId === companyId)
+}
+
+export const isVehicleRentalCompany = (user: User | null): boolean => {
+  if (!user) return false
+  return user.role === "vehicle_rental_company"
+}
+
+export const getUserCompanyInfo = (user: User | null) => {
+  if (!user) {
+    return null
+  }
+
+  // Allow both admin and vehicle_rental_company roles to access vehicle registration
+  if (isVehicleRentalCompany(user)) {
+    return {
+      companyId: user.companyId!,
+      companyName: user.companyName!,
+      companyLogo: user.companyLogo || user.companyName?.substring(0, 2).toUpperCase()
+    }
+  }
+
+  // For admin users, provide access to all vehicle rental companies or a default company
+  if (user.role === "admin") {
+    return {
+      companyId: "admin-access",
+      companyName: "System Administration",
+      companyLogo: "AD",
+      isAdmin: true
+    }
+  }
+
+  return null
 }

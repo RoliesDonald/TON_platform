@@ -17,6 +17,12 @@ import {
   Shield,
   Home,
   ShoppingBag,
+  Building,
+  Hammer,
+  Clock,
+  AlertCircle,
+  Calendar,
+  Car,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +113,44 @@ const navigationItems: NavigationItem[] = [
         href: "/dashboard/workorders/history",
         icon: Settings,
         roles: ["admin", "manager", "service_advisor", "mechanic"],
+      },
+    ],
+  },
+  {
+    title: "Workshop Service",
+    href: "/dashboard/workshop",
+    icon: Hammer,
+    roles: ["admin", "manager", "service_advisor", "mechanic"],
+    children: [
+      {
+        title: "Service Dashboard",
+        href: "/dashboard/workshop",
+        icon: Hammer,
+        roles: ["admin", "manager", "service_advisor", "mechanic"],
+      },
+      {
+        title: "Work Orders",
+        href: "/dashboard/workshop/workorders",
+        icon: FileText,
+        roles: ["admin", "manager", "service_advisor", "mechanic"],
+      },
+      {
+        title: "Service Requests",
+        href: "/dashboard/workshop/service-requests",
+        icon: AlertCircle,
+        roles: ["admin", "manager", "service_advisor"],
+      },
+      {
+        title: "Mechanic Assignments",
+        href: "/dashboard/workshop/mechanics",
+        icon: Users,
+        roles: ["admin", "manager", "service_advisor"],
+      },
+      {
+        title: "Service Schedule",
+        href: "/dashboard/workshop/schedule",
+        icon: Calendar,
+        roles: ["admin", "manager", "service_advisor"],
       },
     ],
   },
@@ -207,6 +251,38 @@ const navigationItems: NavigationItem[] = [
     ],
   },
   {
+    title: "Vehicle Rental Companies",
+    href: "/dashboard/vehicle-rental",
+    icon: Building,
+    roles: ["admin", "manager"],
+    children: [
+      {
+        title: "All Companies",
+        href: "/dashboard/vehicle-rental",
+        icon: Building,
+        roles: ["admin", "manager"],
+      },
+      {
+        title: "Register Company",
+        href: "/dashboard/vehicle-rental/register",
+        icon: Building,
+        roles: ["admin", "manager"],
+      },
+      {
+        title: "Rental Agreements",
+        href: "/dashboard/vehicle-rental/agreements",
+        icon: FileText,
+        roles: ["admin", "manager"],
+      },
+      {
+        title: "Available Vehicles",
+        href: "/dashboard/vehicle-rental/vehicles",
+        icon: Truck,
+        roles: ["admin", "manager"],
+      },
+    ],
+  },
+  {
     title: "User Management",
     href: "/dashboard/user-management",
     icon: Users,
@@ -227,6 +303,64 @@ const navigationItems: NavigationItem[] = [
     ],
   },
 ];
+
+interface SidebarContentProps {
+  expandedItems: string[];
+  toggleExpanded: (title: string) => void;
+  filteredNavigation: NavigationItem[];
+  pathname: string;
+  renderNavigationItem: (item: NavigationItem, isMobile?: boolean) => JSX.Element;
+}
+
+const SidebarContent: React.FC<SidebarContentProps> = ({
+  expandedItems,
+  toggleExpanded,
+  filteredNavigation,
+  pathname,
+  renderNavigationItem,
+}) => (
+  <div className="flex flex-col h-full">
+    <div className="p-6 border-b">
+      <h1 className="text-xl font-bold">TON Platform</h1>
+      <p className="text-sm text-muted-foreground capitalize">Admin Dashboard</p>
+    </div>
+
+    <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <TooltipProvider>{filteredNavigation.map((item) => renderNavigationItem(item))}</TooltipProvider>
+    </nav>
+
+    <div className="p-4 border-t">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start">
+            <Avatar className="h-6 w-6 mr-3">
+              <AvatarFallback>A</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col items-start">
+              <span className="font-medium">Admin User</span>
+              <span className="text-xs text-muted-foreground">admin</span>
+            </div>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuItem>
+            <UserIcon className="mr-2 h-4 w-4" />
+            <span>Profile</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Shield className="mr-2 h-4 w-4" />
+            <span>Security Settings</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="text-red-600 focus:text-red-600">
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Logout</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  </div>
+);
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, isLoading } = useAuth();
@@ -314,56 +448,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="p-6 border-b">
-        <h1 className="text-xl font-bold">TON Platform</h1>
-        <p className="text-sm text-muted-foreground capitalize">{user?.role} Dashboard</p>
-      </div>
-
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        <TooltipProvider>{filteredNavigation.map((item) => renderNavigationItem(item))}</TooltipProvider>
-      </nav>
-
-      <div className="p-4 border-t">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start">
-              <Avatar className="h-6 w-6 mr-3">
-                <AvatarFallback>{user?.avatar}</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col items-start">
-                <span className="font-medium">{user?.name}</span>
-                <span className="text-xs text-muted-foreground capitalize">{user?.role}</span>
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem>
-              <UserIcon className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Shield className="mr-2 h-4 w-4" />
-              <span>Security Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={logout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Logout</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-  );
-
   return (
     <AuthGuard>
       <div className="flex h-screen bg-background">
         {/* Desktop Sidebar */}
         <div className="hidden md:flex md:w-64 md:flex-col border-r bg-card">
-          <SidebarContent />
+          <SidebarContent
+            expandedItems={expandedItems}
+            toggleExpanded={toggleExpanded}
+            filteredNavigation={filteredNavigation}
+            pathname={pathname}
+            renderNavigationItem={renderNavigationItem}
+          />
         </div>
 
         {/* Mobile Sidebar */}
@@ -374,7 +470,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-64">
-            <SidebarContent />
+            <SidebarContent
+              expandedItems={expandedItems}
+              toggleExpanded={toggleExpanded}
+              filteredNavigation={filteredNavigation}
+              pathname={pathname}
+              renderNavigationItem={renderNavigationItem}
+            />
           </SheetContent>
         </Sheet>
 
