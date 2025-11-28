@@ -17,7 +17,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const existingCompany = dbHelpers.findCompanyById(id);
+    const existingCompany = await dbHelpers.findCompanyById(id);
 
     if (!existingCompany) {
       return NextResponse.json(
@@ -44,7 +44,7 @@ export async function PATCH(
     }
 
     // Update company status
-    const updatedCompany = dbHelpers.updateCompany(id, {
+    const updatedCompany = await dbHelpers.updateCompany(id, {
       partnership: {
         ...existingCompany.partnership,
         status: body.status,

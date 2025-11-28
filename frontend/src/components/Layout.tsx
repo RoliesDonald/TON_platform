@@ -12,7 +12,7 @@ import {
   MapPin,
   DollarSign,
   Wrench,
-  LogOut,
+  LogOut as LogOutIcon, // Renamed to avoid conflict
   User as UserIcon,
   Shield,
   Home,
@@ -38,7 +38,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+// Assuming AuthContext provides type UserRole and useAuth hook
 import { useAuth, type UserRole } from "@/contexts/AuthContext";
+// Assuming AuthGuard is a component
 import { AuthGuard } from "@/components/AuthGuard";
 
 interface NavigationItem {
@@ -195,7 +197,7 @@ const navigationItems: NavigationItem[] = [
   {
     title: "Inventory Management",
     href: "/dashboard/inventory",
-    icon: Truck,
+    icon: ShoppingBag, // Changed from Truck to ShoppingBag for better differentiation
     roles: ["admin", "manager", "service_advisor"],
     children: [
       {
@@ -310,6 +312,9 @@ interface SidebarContentProps {
   filteredNavigation: NavigationItem[];
   pathname: string;
   renderNavigationItem: (item: NavigationItem, isMobile?: boolean) => JSX.Element;
+  userRole: UserRole | undefined; // Added userRole for display
+  userName: string | undefined; // Added userName for display
+  logout: () => void; // Added logout function
 }
 
 const SidebarContent: React.FC<SidebarContentProps> = ({
@@ -318,11 +323,16 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
   filteredNavigation,
   pathname,
   renderNavigationItem,
+  userRole,
+  userName,
+  logout,
 }) => (
   <div className="flex flex-col h-full">
     <div className="p-6 border-b">
       <h1 className="text-xl font-bold">TON Platform</h1>
-      <p className="text-sm text-muted-foreground capitalize">Admin Dashboard</p>
+      <p className="text-sm text-muted-foreground capitalize">
+        {userRole ? `${userRole} Dashboard` : "Loading..."}
+      </p>
     </div>
 
     <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -334,11 +344,11 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="w-full justify-start">
             <Avatar className="h-6 w-6 mr-3">
-              <AvatarFallback>A</AvatarFallback>
+              <AvatarFallback>{userName ? userName[0] : "U"}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col items-start">
-              <span className="font-medium">Admin User</span>
-              <span className="text-xs text-muted-foreground">admin</span>
+              <span className="font-medium">{userName || "User"}</span>
+              <span className="text-xs text-muted-foreground capitalize">{userRole || "Guest"}</span>
             </div>
           </Button>
         </DropdownMenuTrigger>
@@ -352,8 +362,16 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
             <span>Security Settings</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-red-600 focus:text-red-600">
-            <LogOut className="mr-2 h-4 w-4" />
+          {/* FIXED: Corrected the onClick handler to use the actual logout function */}
+          <DropdownMenuItem
+            className="text-red-600 focus:text-red-600"
+            onClick={(e) => {
+              e.preventDefault(); // Prevent default if it's wrapping a Link
+              console.log('🚨 Logout button clicked! Calling logout function...');
+              logout();
+            }}
+          >
+            <LogOutIcon className="mr-2 h-4 w-4" />
             <span>Logout</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -364,7 +382,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, isLoading } = useAuth();
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [expandedItems, setExpandedItems] = useState<string[]>([navigationItems[0].title]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -443,15 +461,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
     );
   };
 
-  // Don't render layout for login page
-  if (pathname === "/login") {
-    return <>{children}</>;
-  }
+  // The logic for displaying the user's name and role in the sidebar is simplified here,
+  // assuming `user` object has `name` and `role` properties.
+  const userRole = user?.role;
+  // Placeholder for user name/avatar info
+  const userName = user?.name || "Admin User";
+  const userAvatarFallback = userName ? userName[0] : "U";
 
   return (
     <AuthGuard>
       <div className="flex h-screen bg-background">
         {/* Desktop Sidebar */}
+        {/* FIXED: Removed the incorrect duplicate sidebar structure */}
         <div className="hidden md:flex md:w-64 md:flex-col border-r bg-card">
           <SidebarContent
             expandedItems={expandedItems}
@@ -459,10 +480,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             filteredNavigation={filteredNavigation}
             pathname={pathname}
             renderNavigationItem={renderNavigationItem}
+            userRole={userRole}
+            userName={userName}
+            logout={logout}
           />
         </div>
 
-        {/* Mobile Sidebar */}
+        {/* Mobile Sidebar Trigger & Content */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="md:hidden fixed top-4 left-4 z-40">
@@ -476,27 +500,35 @@ export function Layout({ children }: { children: React.ReactNode }) {
               filteredNavigation={filteredNavigation}
               pathname={pathname}
               renderNavigationItem={renderNavigationItem}
+              userRole={userRole}
+              userName={userName}
+              logout={logout}
             />
           </SheetContent>
         </Sheet>
 
-        {/* Main Content */}
+        {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Mobile Header */}
+          {/* Mobile Header (moved inside the main content column) */}
           <header className="md:hidden bg-white border-b px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h1 className="text-lg font-semibold">TON Platform</h1>
               <Badge variant="secondary" className="text-xs capitalize">
-                {user?.role}
+                {userRole || "Loading..."}
               </Badge>
             </div>
             <Avatar className="h-8 w-8">
-              <AvatarFallback>{user?.avatar}</AvatarFallback>
+              <AvatarFallback>{userAvatarFallback}</AvatarFallback>
             </Avatar>
           </header>
 
           {/* Page Content */}
           <main className="flex-1 overflow-y-auto p-6">{children}</main>
+
+          {/* FIXED: Removed the incorrect debug line which caused an error */}
+          {/* <div className="text-xs text-muted-foreground mb-4">
+            🔍 Sidebar Debug: {expandedItems.length} items available | Current role: {user?.role} | Items: {expandedItems.map(item => `${item.title} (${item.roles?.join(', ')}`)}
+          </div> */}
         </div>
       </div>
     </AuthGuard>

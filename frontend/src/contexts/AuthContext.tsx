@@ -5,6 +5,24 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 // User role types based on the TON platform
 export type UserRole = "admin" | "manager" | "accountant" | "service_advisor" | "mechanic" | "driver" | "vehicle_rental_company"
 
+// Function to map backend role names to frontend role types
+const mapBackendRole = (backendRole: string): UserRole => {
+  const roleMapping: Record<string, UserRole> = {
+    'super_admin': 'admin',
+    'fleet_manager': 'manager',
+    'finance_manager': 'accountant',
+    'service_advisor': 'service_advisor',
+    'mechanic': 'mechanic',
+    'driver': 'driver',
+    'vehicle_rental_company': 'vehicle_rental_company',
+    'administrator': 'admin',  // Add mapping for "Administrator" role
+  }
+  // Normalize backend role by converting to lowercase and replacing underscores with dashes
+  const normalizedRole = backendRole.toLowerCase().replace(/_/g, '-')
+
+  return roleMapping[normalizedRole] || 'driver'
+}
+
 export interface User {
   id: string
   name: string
@@ -43,39 +61,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true)
 
-      // In a real app, check localStorage or make API call to validate session
+      // Check localStorage for existing session
       const token = localStorage.getItem('auth_token')
       const userData = localStorage.getItem('user_data')
 
       if (token && userData) {
         const parsedUser = JSON.parse(userData)
-        setUser(parsedUser)
 
         // Validate token with backend
-        // const response = await fetch('/api/v1/auth/validate', {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // })
-        // if (!response.ok) {
-        //   throw new Error('Invalid token')
-        // }
-      } else {
-        // No existing session - provide mock user for development
-        if (process.env.NODE_ENV === 'development') {
-          const mockUser: User = {
-            id: 'mock-user-1',
-            name: 'John Doe',
-            email: 'john@rentalcompany.com',
-            role: 'vehicle_rental_company',
-            companyId: 'mock-1',
-            companyName: 'Test Rental Company',
-            companyLogo: 'TR',
-            created_at: new Date().toISOString(),
+        const response = await fetch('http://localhost:8080/api/v1/auth/profile', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
           }
-          setUser(mockUser)
-        } else {
-          setUser(null)
+        })
+
+        if (response.ok) {
+          const result = await response.json()
+          if (result.success) {
+            setUser(parsedUser)
+            return
+          }
         }
+
+        // Token validation failed, clear session
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user_data')
+        setUser(null)
       }
+
+      setUser(null)
     } catch (error) {
       console.error('Auth session check failed:', error)
       // Clear invalid session
@@ -91,59 +107,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true)
 
-      // In a real app, make API call to authenticate
-      // const response = await fetch('/api/v1/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // })
-      // const data = await response.json()
+      // Call real backend API
+      const response = await fetch('http://localhost:8080/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password })
+      })
 
-      // Mock login for development
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data) {
+          // Store real JWT token
+          const token = result.data.access_token
+          const userData: User = {
+            id: result.data.user.id.toString(),
+            name: `${result.data.user.first_name} ${result.data.user.last_name}`.trim() || email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            email: result.data.user.email,
+            role: mapBackendRole(result.data.user.role),
+            avatar: email.substring(0, 2).toUpperCase(),
+            phone: result.data.user.phone || "+1 (555) 000-0000",
+            created_at: result.data.user.created_at,
+            last_login: new Date().toISOString(),
+            companyId: result.data.user.company_id,
+            companyName: result.data.user.company_name,
+            companyLogo: result.data.user.company_logo
+          }
 
-      if (email && password) {
-        // Determine user role based on email (for demo purposes)
-        let role: UserRole = "manager"
-        let companyId: string | undefined = undefined
-        let companyName: string | undefined = undefined
-        let companyLogo: string | undefined = undefined
+          localStorage.setItem('auth_token', token)
+          localStorage.setItem('user_data', JSON.stringify(userData))
+          setUser(userData)
 
-        if (email.includes("admin")) role = "admin"
-        else if (email.includes("accountant")) role = "accountant"
-        else if (email.includes("mechanic")) role = "mechanic"
-        else if (email.includes("driver")) role = "driver"
-        else if (email.includes("service")) role = "service_advisor"
-        else if (email.includes("rental") || email.includes("company")) {
-          role = "vehicle_rental_company"
-          // For demo purposes, use mock company data
-          companyId = "mock-1"
-          companyName = "Premium Fleet Rentals"
-          companyLogo = "PF"
+          return true
         }
-
-        const userData: User = {
-          id: "1",
-          name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-          email,
-          role,
-          avatar: email.substring(0, 2).toUpperCase(),
-          phone: "+1 (555) 000-0000",
-          created_at: new Date().toISOString(),
-          last_login: new Date().toISOString(),
-          companyId,
-          companyName,
-          companyLogo
-        }
-
-        // Mock token
-        const token = "mock_jwt_token_" + Date.now()
-
-        localStorage.setItem('auth_token', token)
-        localStorage.setItem('user_data', JSON.stringify(userData))
-        setUser(userData)
-
-        return true
       }
 
       return false
@@ -158,25 +155,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true)
+      console.log('🚪 Logout: Starting logout process...')
 
-      // In a real app, make API call to logout
-      // await fetch('/api/v1/auth/logout', {
-      //   method: 'POST',
-      //   headers: { Authorization: `Bearer ${token}` }
-      // })
+      const token = localStorage.getItem('auth_token')
 
-      // Clear local storage
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('user_data')
-      setUser(null)
+      if (!token) {
+        console.log('⚠️ Logout: No auth token found in localStorage')
+        // Clear local storage even if no token
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user_data')
+        setUser(null)
+        setIsLoading(false)
+        return
+      }
+
+      console.log('🔐 Logout: Token found, calling backend API...')
+
+      // Call real backend API
+      const response = await fetch('http://localhost:8080/api/v1/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+          }
+        })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Logout: Backend response:', result)
+
+        // Clear local storage
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user_data')
+        setUser(null)
+
+        console.log('✅ Logout: Local storage cleared, user state updated')
+      } else {
+        console.error('❌ Logout: Backend API call failed:', response.status, response.statusText)
+
+        // Even if logout API fails, clear local session
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user_data')
+        setUser(null)
+      }
     } catch (error) {
-      console.error('Logout failed:', error)
+      console.error('💥 Logout: Exception occurred:', error)
       // Even if logout API fails, clear local session
       localStorage.removeItem('auth_token')
       localStorage.removeItem('user_data')
       setUser(null)
     } finally {
       setIsLoading(false)
+      console.log('🏁 Logout: Process completed, loading state set to false')
     }
   }
 
@@ -185,6 +215,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const updatedUser = { ...user, role }
       setUser(updatedUser)
       localStorage.setItem('user_data', JSON.stringify(updatedUser))
+
+      // Debug: Alert the current user role and role mapping
+      alert(`User Role Debug: Current role = ${user.role}, Mapped role = ${mapBackendRole(user.role)}`)
     }
   }
 

@@ -14,7 +14,7 @@ COPY . .
 RUN go mod tidy
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o ton-backend ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -o ton-backend ./simple_server.go
 
 # Runtime stage
 FROM alpine:latest

@@ -108,7 +108,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const existingCompany = dbHelpers.findCompanyById(id);
+    const existingCompany = await dbHelpers.findCompanyById(id);
 
     if (!existingCompany) {
       return NextResponse.json(
@@ -124,7 +124,7 @@ export async function PUT(
     const updatedCompanyData = transformFormData(formData);
 
     // Check if email conflicts with another company
-    const emailConflict = dbHelpers.findCompanyByEmail(formData.email);
+    const emailConflict = await dbHelpers.findCompanyByEmail(formData.email);
 
     if (emailConflict && emailConflict.id !== id) {
       return NextResponse.json(
@@ -137,7 +137,7 @@ export async function PUT(
     }
 
     // Update company
-    const updatedCompany = dbHelpers.updateCompany(id, {
+    const updatedCompany = await dbHelpers.updateCompany(id, {
       ...updatedCompanyData,
       id: id, // Ensure ID remains the same
       createdAt: existingCompany.createdAt, // Preserve creation date

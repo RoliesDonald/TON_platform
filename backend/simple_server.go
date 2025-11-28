@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -88,6 +89,7 @@ func main() {
 
 	// Auth endpoints
 	r.POST("/api/v1/auth/login", login)
+	r.POST("/api/v1/auth/logout", authMiddleware(), logout)
 	r.GET("/api/v1/auth/profile", authMiddleware(), profile)
 
 	// Ping endpoint
@@ -113,24 +115,43 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// Find user
-	var user User
-	result := db.Where("email = ?", req.Email).First(&user)
-	if result.Error != nil {
-		c.JSON(401, gin.H{
-			"success": false,
-			"message": "Authentication failed",
-			"error":   "invalid email or password",
-		})
-		return
-	}
-
-	// Simple admin bypass - check if email and password match admin credentials
-	if req.Email == "admin@tonplatform.com" && req.Password == "admin123" {
-		log.Printf("✅ Admin login successful for %s", req.Email)
+	// Demo credentials: accept any email with password "password"
+	if req.Password == "password" {
+		log.Printf("✅ Demo login successful for %s", req.Email)
 
 		// Create mock tokens
 		token := "mock-jwt-token-" + fmt.Sprintf("%d", time.Now().Unix())
+
+		// Determine user role based on email pattern
+		role := "User"
+		firstName := "Demo"
+		lastName := "User"
+
+		if strings.Contains(req.Email, "admin") {
+			role = "Administrator"
+			firstName = "Admin"
+			lastName = "User"
+		} else if strings.Contains(req.Email, "sarah") || strings.Contains(req.Email, "michael") {
+			role = "Fleet Manager"
+			firstName = strings.Split(req.Email, ".")[0]
+			lastName = strings.Split(strings.Split(req.Email, "@")[0], ".")[1]
+		} else if strings.Contains(req.Email, "emily") {
+			role = "Finance Manager"
+			firstName = "Emily"
+			lastName = "Davis"
+		} else if strings.Contains(req.Email, "robert") || strings.Contains(req.Email, "lisa") {
+			role = "Service Advisor"
+			firstName = strings.Split(req.Email, ".")[0]
+			lastName = strings.Split(strings.Split(req.Email, "@")[0], ".")[1]
+		} else if strings.Contains(req.Email, "james") {
+			role = "Mechanic"
+			firstName = "James"
+			lastName = "Taylor"
+		} else if strings.Contains(req.Email, "david") {
+			role = "Driver"
+			firstName = "David"
+			lastName = "Brown"
+		}
 
 		response := AuthResponse{
 			AccessToken:  token,
@@ -138,14 +159,14 @@ func login(c *gin.Context) {
 			ExpiresAt:    time.Now().Add(24 * time.Hour),
 			TokenType:    "Bearer",
 			User: UserInfo{
-				ID:        user.ID,
-				Username:  user.Username,
-				Email:     user.Email,
-				FirstName: user.FirstName,
-				LastName:  user.LastName,
-				Role:      "Administrator", // Set proper admin role
+				ID:        1,
+				Username:  strings.Split(req.Email, "@")[0],
+				Email:     req.Email,
+				FirstName: firstName,
+				LastName:  lastName,
+				Role:      role,
 				IsActive:  true,
-				CreatedAt: user.CreatedAt,
+				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			},
 		}
@@ -158,41 +179,11 @@ func login(c *gin.Context) {
 		return
 	}
 
-	// For other users, check password (simplified)
-	if user.Password != req.Password {
-		c.JSON(401, gin.H{
-			"success": false,
-			"message": "Authentication failed",
-			"error":   "invalid email or password",
-		})
-		return
-	}
-
-	// Success for other users
-	token := "mock-jwt-token-" + fmt.Sprintf("%d", time.Now().Unix())
-
-	response := AuthResponse{
-		AccessToken:  token,
-		RefreshToken: token + "-refresh",
-		ExpiresAt:    time.Now().Add(24 * time.Hour),
-		TokenType:    "Bearer",
-		User: UserInfo{
-			ID:        user.ID,
-			Username:  user.Username,
-			Email:     user.Email,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Role:      user.Role,
-			IsActive:  user.IsActive,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: time.Now(),
-		},
-	}
-
-	c.JSON(200, gin.H{
-		"success": true,
-		"message": "Login successful",
-		"data":    response,
+	// For non-demo credentials, return error
+	c.JSON(401, gin.H{
+		"success": false,
+		"message": "Authentication failed",
+		"error":   "invalid email or password - use password 'password' for demo",
 	})
 }
 
@@ -236,6 +227,31 @@ func authMiddleware() gin.HandlerFunc {
 		
 		c.Next()
 	}
+}
+
+func logout(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	email := c.GetString("email")
+	username := c.GetString("username")
+
+	// Log the logout
+	log.Printf("🚪 User logged out: %s (ID: %d)", email, userID)
+
+	// In a real implementation, you might:
+	// - Add the token to a blacklist
+	// - Clear the user's session
+	// - Revoke the refresh token
+	// For now, we'll just log it out
+
+	c.JSON(200, gin.H{
+		"success": true,
+		"message": "Logout successful",
+		"data": gin.H{
+			"user_id":  userID,
+			"username": username,
+			"email":    email,
+		},
+	})
 }
 
 func profile(c *gin.Context) {

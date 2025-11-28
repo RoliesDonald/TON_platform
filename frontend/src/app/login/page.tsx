@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Truck, Wrench, Users, FileText, MapPin, DollarSign, Settings } from "lucide-react"
+import { Loader2, Truck, Wrench, Users, MapPin, DollarSign, Settings } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -36,12 +36,14 @@ export default function LoginPage() {
   }
 
   const demoUsers = [
-    { email: "admin@ton.com", role: "Admin", icon: Settings, color: "bg-purple-100 text-purple-800" },
-    { email: "manager@ton.com", role: "Manager", icon: Users, color: "bg-blue-100 text-blue-800" },
-    { email: "accountant@ton.com", role: "Accountant", icon: DollarSign, color: "bg-green-100 text-green-800" },
-    { email: "service@ton.com", role: "Service Advisor", icon: Wrench, color: "bg-orange-100 text-orange-800" },
-    { email: "mechanic@ton.com", role: "Mechanic", icon: Truck, color: "bg-gray-100 text-gray-800" },
-    { email: "driver@ton.com", role: "Driver", icon: MapPin, color: "bg-indigo-100 text-indigo-800" }
+    { email: "admin@tonplatform.com", role: "SUPER_ADMIN", icon: Settings, color: "bg-purple-100 text-purple-800" },
+    { email: "sarah.j@ton.com", role: "FLEET_MANAGER", icon: Users, color: "bg-blue-100 text-blue-800" },
+    { email: "michael.c@ton.com", role: "FLEET_MANAGER", icon: Users, color: "bg-blue-100 text-blue-800" },
+    { email: "emily.d@ton.com", role: "FINANCE_MANAGER", icon: DollarSign, color: "bg-green-100 text-green-800" },
+    { email: "robert.w@ton.com", role: "SERVICE_ADVISOR", icon: Wrench, color: "bg-orange-100 text-orange-800" },
+    { email: "lisa.m@ton.com", role: "SERVICE_ADVISOR", icon: Wrench, color: "bg-orange-100 text-orange-800" },
+    { email: "james.t@ton.com", role: "MECHANIC", icon: Truck, color: "bg-gray-100 text-gray-800" },
+    { email: "david.b@ton.com", role: "DRIVER", icon: MapPin, color: "bg-indigo-100 text-indigo-800" }
   ]
 
   const selectDemoUser = (demoEmail: string) => {
