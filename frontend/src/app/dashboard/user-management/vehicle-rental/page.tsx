@@ -243,7 +243,7 @@ export default function VehicleRentalUserManagement() {
     training: rentalEmployees.filter((e) => e.status === "training").length,
     departments: [...new Set(rentalEmployees.map((e) => e.department))].length,
     averageRating: (
-      rentalEmployees.filter((e) => e.customerRating > 0).reduce((sum, e) => sum + e.customerRating, 0) /
+      rentalEmployees.filter((e) => e.customerRating != null && e.customerRating > 0).reduce((sum, e) => sum + (e.customerRating || 0), 0) /
       rentalEmployees.filter((e) => e.customerRating > 0).length
     ).toFixed(1),
     totalRentals: rentalEmployees.reduce((sum, e) => sum + e.rentalsProcessed, 0),

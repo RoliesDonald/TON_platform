@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, canViewAllVehicles, canRegisterVehicles } from "@/contexts/AuthContext";
 import { VehicleRentalGuard } from "@/components/VehicleRentalGuard";
-import { vehicleApi } from "@/lib/api";
+import { vehicleApi, Vehicle } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,49 +46,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-interface Vehicle {
-  id: string;
-  vehicleId: string;
-  companyId: string;
-  companyName: string;
-  companyLogo: string;
-  vehicleInfo: {
-    make: string;
-    model: string;
-    year: number;
-    category: "sedan" | "suv" | "truck" | "van" | "luxury";
-    plateNumber: string;
-    vin: string;
-    color: string;
-    mileage: number;
-  };
-  specifications: {
-    engine: string;
-    transmission: "automatic" | "manual";
-    fuelType: "gasoline" | "diesel" | "electric" | "hybrid";
-    seats: number;
-    doors: number;
-    features: string[];
-  };
-  rental: {
-    dailyRate: number;
-    weeklyRate: number;
-    monthlyRate: number;
-    deposit: number;
-    currency: string;
-    available: boolean;
-    availableFrom?: string;
-    location: string;
-    minimumRentalDays: number;
-  };
-  status: "available" | "rented" | "maintenance" | "reserved" | "unavailable";
-  lastMaintenance: string;
-  nextMaintenance: string;
-  rating: number;
-  rentalCount: number;
-  createdAt: string;
-  lastUpdated: string;
-}
+// Vehicle interface imported from @/lib/api
 
 // Vehicles will be loaded from API via loadVehicles function
 

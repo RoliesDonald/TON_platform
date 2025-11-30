@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const companyId = searchParams.get('companyId');
     const search = searchParams.get('search');
 
-    let vehicles = [];
+    let vehicles: Vehicle[] = [];
 
     // If we have vehicle search functionality
     if (companyId && typeof dbHelpers.findVehiclesByCompany === 'function') {

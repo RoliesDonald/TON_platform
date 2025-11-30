@@ -69,7 +69,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const company = dbHelpers.findCompanyById(id);
+    const company = await dbHelpers.findCompanyById(id);
 
     if (!company) {
       return NextResponse.json(
@@ -171,7 +171,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const deletedCompany = dbHelpers.deleteCompany(id);
+    const deletedCompany = await dbHelpers.deleteCompany(id);
 
     if (!deletedCompany) {
       return NextResponse.json(

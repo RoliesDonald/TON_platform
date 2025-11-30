@@ -177,19 +177,12 @@ export const mockCompanies: VehicleRentalCompany[] = [
         policyNumber: 'INS-123456',
         provider: 'Test Insurance',
         expiryDate: '2025-12-31',
-        coverageAmount: 1000000,
       },
       certifications: ['DOT-CERT-001', 'SAFE-DRIVER-002'],
     },
-    documents: [],
-    performance: {
-      rating: 4.5,
-      totalRentals: 150,
-      averageRevenuePerRental: 250,
-      customerSatisfactionScore: 92,
-    },
+    agreedToTerms: true,
     createdAt: '2024-01-01T00:00:00.000Z',
-    lastUpdated: '2024-11-25T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
   }
 ];
 
@@ -199,6 +192,7 @@ export const mockVehicles: Vehicle[] = [
     vehicleId: 'VH-MOCK-001',
     companyId: 'mock-1',
     companyName: 'Test Rental Company',
+    companyLogo: 'TC',
     vehicleInfo: {
       make: 'Toyota',
       model: 'Camry',
@@ -230,6 +224,8 @@ export const mockVehicles: Vehicle[] = [
     status: 'available',
     rating: 4.2,
     rentalCount: 25,
+    lastMaintenance: '2024-02-15',
+    nextMaintenance: '2025-02-15',
     createdAt: '2024-01-01T00:00:00.000Z',
     lastUpdated: '2024-11-25T00:00:00.000Z',
   }
@@ -260,7 +256,7 @@ export const dbHelpers = {
   findCompanyByEmail: async (email: string): Promise<VehicleRentalCompany | null> => {
     const dbCompany = await db.findCompaniesByType('RENTAL_COMPANY');
     const company = dbCompany.find((c: any) => c.company_email?.toLowerCase() === email.toLowerCase());
-    return transformCompanyFromDB(company);
+    return transformCompanyFromDB(company || null);
   },
 
   addCompany: async (company: VehicleRentalCompany): Promise<void> => {
@@ -301,7 +297,7 @@ export const dbHelpers = {
   searchCompanies: async (query: string): Promise<VehicleRentalCompany[]> => {
     const dbCompanies = await db.findCompaniesByType('RENTAL_COMPANY');
 
-    if (!query) return dbCompanies.map(c => transformCompanyFromDB(c)).filter(Boolean);
+    if (!query) return dbCompanies.map(c => transformCompanyFromDB(c || null)).filter((c): c is VehicleRentalCompany => c !== null);
 
     const lowercaseQuery = query.toLowerCase();
     const filteredCompanies = dbCompanies.filter((company: any) =>
@@ -310,7 +306,7 @@ export const dbHelpers = {
       company.city?.toLowerCase().includes(lowercaseQuery)
     );
 
-    return filteredCompanies.map(c => transformCompanyFromDB(c)).filter(Boolean);
+    return filteredCompanies.map(c => transformCompanyFromDB(c || null)).filter((c): c is VehicleRentalCompany => c !== null);
   },
 
   // Vehicle functions
@@ -354,7 +350,7 @@ export const dbHelpers = {
 
   findVehiclesByCompany: async (companyId: string): Promise<Vehicle[]> => {
     const dbVehicles = await db.findVehiclesByCompany(companyId);
-    return dbVehicles.map(v => transformVehicleFromDB(v)).filter(Boolean);
+    return dbVehicles.map(v => transformVehicleFromDB(v)).filter((v): v is Vehicle => v !== null);
   },
 
   addVehicle: async (vehicle: Vehicle): Promise<void> => {
@@ -456,7 +452,7 @@ export const dbHelpers = {
         console.log(`📊 Database returned ${dbVehicles?.length || 0} vehicles for query "${searchPattern}"`);
 
         if (dbVehicles && dbVehicles.length > 0) {
-          const transformed = dbVehicles.map(v => transformVehicleFromDB(v)).filter(Boolean);
+          const transformed = dbVehicles.map(v => transformVehicleFromDB(v)).filter((v): v is Vehicle => v !== null);
           allVehicles = [...transformed];
           console.log('🚗 Transformed vehicles from database:', transformed.length);
         }
@@ -465,7 +461,7 @@ export const dbHelpers = {
         console.log(`📊 Database returned ${dbVehicles?.length || 0} vehicles for query "${query}"`);
 
         if (dbVehicles && dbVehicles.length > 0) {
-          const transformed = dbVehicles.map(v => transformVehicleFromDB(v)).filter(Boolean);
+          const transformed = dbVehicles.map(v => transformVehicleFromDB(v)).filter((v): v is Vehicle => v !== null);
           allVehicles = [...transformed];
           console.log('🚗 Transformed vehicles from database:', transformed.length);
         }

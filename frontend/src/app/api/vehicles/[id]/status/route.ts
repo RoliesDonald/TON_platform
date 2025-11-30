@@ -17,7 +17,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const existingVehicle = typeof dbHelpers.findVehicleById === 'function'
-      ? dbHelpers.findVehicleById(id)
+      ? await dbHelpers.findVehicleById(id)
       : (global as any).mockVehicles?.find((v: Vehicle) => v.id === id);
 
     if (!existingVehicle) {
@@ -52,7 +52,7 @@ export async function PATCH(
     };
 
     if (typeof dbHelpers.updateVehicle === 'function') {
-      const result = dbHelpers.updateVehicle(id, { status: body.status });
+      const result = await dbHelpers.updateVehicle(id, { status: body.status });
       if (!result) {
         return NextResponse.json(
           {

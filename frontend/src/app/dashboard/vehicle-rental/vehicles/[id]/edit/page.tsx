@@ -40,9 +40,9 @@ const commonFeatures = [
 ];
 
 interface EditVehiclePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function EditVehiclePage({ params }: EditVehiclePageProps) {

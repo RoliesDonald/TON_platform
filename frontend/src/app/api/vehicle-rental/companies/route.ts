@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
-    const existingCompany = dbHelpers.findCompanyByEmail(formData.email);
+    const existingCompany = await dbHelpers.findCompanyByEmail(formData.email);
 
     if (existingCompany) {
       return NextResponse.json(
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Add to mock database
-    dbHelpers.addCompany(newCompany);
+    await dbHelpers.addCompany(newCompany);
 
     return NextResponse.json({
       success: true,

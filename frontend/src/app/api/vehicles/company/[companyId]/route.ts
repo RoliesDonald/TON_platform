@@ -17,7 +17,7 @@ export async function GET(
     const { companyId } = await params;
 
     // Check if company exists
-    const company = dbHelpers.findCompanyById(companyId);
+    const company = await dbHelpers.findCompanyById(companyId);
     if (!company) {
       return NextResponse.json(
         {
@@ -31,7 +31,7 @@ export async function GET(
     let vehicles = [];
 
     if (typeof dbHelpers.findVehiclesByCompany === 'function') {
-      vehicles = dbHelpers.findVehiclesByCompany(companyId);
+      vehicles = await dbHelpers.findVehiclesByCompany(companyId);
     } else {
       // Fallback: filter mock data by company ID
       const mockVehicles = (global as any).mockVehicles || [];

@@ -70,7 +70,7 @@ interface WorkOrder {
     id: string;
     name: string;
     specialization: string;
-  };
+  } | null;
   estimatedTime: number;
   actualTime?: number;
   estimatedCost: number;

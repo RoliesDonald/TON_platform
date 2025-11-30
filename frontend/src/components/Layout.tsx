@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useState } from "react";
 import {
   ChevronDown,
@@ -311,7 +312,7 @@ interface SidebarContentProps {
   toggleExpanded: (title: string) => void;
   filteredNavigation: NavigationItem[];
   pathname: string;
-  renderNavigationItem: (item: NavigationItem, isMobile?: boolean) => JSX.Element;
+  renderNavigationItem: (item: NavigationItem, isMobile?: boolean) => React.ReactElement;
   userRole: UserRole | undefined; // Added userRole for display
   userName: string | undefined; // Added userName for display
   logout: () => void; // Added logout function

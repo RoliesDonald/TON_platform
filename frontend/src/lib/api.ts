@@ -337,7 +337,7 @@ export interface Vehicle {
     make: string;
     model: string;
     year: number;
-    category: "sedan" | "suv" | "truck" | "van" | "luxury";
+    category: "sedan" | "suv" | "truck" | "van" | "luxury" | "light-truck";
     plateNumber: string;
     vin: string;
     color: string;
@@ -345,7 +345,7 @@ export interface Vehicle {
   };
   specifications: {
     engine: string;
-    transmission: "automatic" | "manual";
+    transmission: "automatic" | "manual" | "cvt";
     fuelType: "gasoline" | "diesel" | "electric" | "hybrid";
     seats: number;
     doors: number;

@@ -17,7 +17,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const existingVehicle = typeof dbHelpers.findVehicleById === 'function'
-      ? dbHelpers.findVehicleById(id)
+      ? await dbHelpers.findVehicleById(id)
       : (global as any).mockVehicles?.find((v: Vehicle) => v.id === id);
 
     if (!existingVehicle) {

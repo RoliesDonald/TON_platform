@@ -39,6 +39,22 @@ import {
 } from "@/components/ui/table"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
+interface WorkOrderPart {
+  id: string
+  name: string
+  quantity: number
+  unitCost: number
+  total: number
+}
+
+interface WorkOrderLaborItem {
+  id: string
+  description: string
+  hours: number
+  rate: number
+  total: number
+}
+
 interface WorkOrderData {
   // Basic Information
   title: string
@@ -179,7 +195,8 @@ export default function CreateWorkOrderPage() {
     }))
   }
 
-  const updatePart = (id: string, field: keyof typeof newPart, value: string | number) => {
+  
+  const updatePart = (id: string, field: keyof WorkOrderPart, value: string | number) => {
     setWorkOrder(prev => ({
       ...prev,
       parts: prev.parts.map(part =>
@@ -214,7 +231,7 @@ export default function CreateWorkOrderPage() {
     }))
   }
 
-  const updateLaborItem = (id: string, field: keyof typeof newLaborItem, value: string | number) => {
+  const updateLaborItem = (id: string, field: keyof WorkOrderLaborItem, value: string | number) => {
     setWorkOrder(prev => ({
       ...prev,
       laborItems: prev.laborItems.map(labor =>

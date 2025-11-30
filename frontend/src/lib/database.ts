@@ -80,7 +80,7 @@ class PostgreSQLDatabase implements DatabaseHelper {
     // If mock data mode is enabled, return empty result
     if (!this.pool) {
       console.log('Mock data mode: Returning empty result for query:', { text, params });
-      return { rows: [], rowCount: 0 } as QueryResult;
+      return { rows: [], rowCount: 0, command: '', oid: 0, fields: [] } as QueryResult;
     }
 
     const start = Date.now();
@@ -427,7 +427,7 @@ class PostgreSQLDatabase implements DatabaseHelper {
   async deleteVehicle(id: string): Promise<boolean> {
     const query = 'DELETE FROM vehicles WHERE id = $1';
     const result = await this.query(query, [id]);
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async searchVehicles(searchTerm: string): Promise<any[]> {
@@ -485,7 +485,20 @@ class PostgreSQLDatabase implements DatabaseHelper {
   async deleteSession(sessionId: string): Promise<boolean> {
     const query = 'UPDATE sessions SET valid = false WHERE id = $1';
     const result = await this.query(query, [sessionId]);
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
+  }
+
+  async healthCheck(): Promise<boolean> {
+    if (!this.pool) {
+      return true; // Mock data mode
+    }
+    try {
+      await this.query('SELECT 1');
+      return true;
+    } catch (error) {
+      console.error('Database health check failed:', error);
+      return false;
+    }
   }
 }
 
@@ -500,7 +513,7 @@ export async function checkDatabaseHealth(): Promise<boolean> {
   }
 
   try {
-    await db.query('SELECT 1');
+    await db.healthCheck();
     return true;
   } catch (error) {
     console.error('Database health check failed:', error);

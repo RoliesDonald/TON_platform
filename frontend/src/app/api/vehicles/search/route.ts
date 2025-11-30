@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     let vehicles = [];
 
     if (typeof dbHelpers.searchVehicles === 'function') {
-      vehicles = dbHelpers.searchVehicles(query);
+      vehicles = await dbHelpers.searchVehicles(query);
     } else {
       // Fallback: basic search in mock data
       const mockVehicles = (global as any).mockVehicles || [];

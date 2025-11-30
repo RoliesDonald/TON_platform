@@ -158,7 +158,7 @@ export async function PUT(
 
     // Verify company exists if companyId is being updated
     if (body.companyId) {
-      const company = dbHelpers.findCompanyById(body.companyId);
+      const company = await dbHelpers.findCompanyById(body.companyId);
       if (!company) {
         return NextResponse.json(
           {

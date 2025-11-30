@@ -195,16 +195,16 @@ export default function MaintenanceReportsPage() {
     inProgress: filteredData.filter((m) => m.status === "In Progress").length,
     pending: filteredData.filter((m) => m.status === "Pending").length,
     averageCost:
-      filteredData.filter((m) => m.cost).reduce((sum, m) => sum + m.cost, 0) /
-      filteredData.filter((m) => m.cost).length,
+      filteredData.filter((m) => m.cost != null).reduce((sum, m) => sum + (m.cost || 0), 0) /
+      filteredData.filter((m) => m.cost != null).length,
     totalCost: filteredData.reduce((sum, m) => sum + (m.cost || m.estimatedCost || 0), 0),
     averageDuration:
       filteredData.filter((m) => m.duration).reduce((sum, m) => sum + m.duration, 0) /
       filteredData.filter((m) => m.duration).length,
     totalDowntime: filteredData.reduce((sum, m) => sum + m.downtime, 0),
     averageRating:
-      filteredData.filter((m) => m.customerRating).reduce((sum, m) => sum + m.customerRating, 0) /
-      filteredData.filter((m) => m.customerRating).length,
+      filteredData.filter((m) => m.customerRating != null).reduce((sum, m) => sum + (m.customerRating || 0), 0) /
+      filteredData.filter((m) => m.customerRating != null).length,
   };
 
   return (
